@@ -1,6 +1,6 @@
 /*
 Program name: Task Tracker
-Purpose: Adds three new buttons to the windows right click menu: Finished, Unfinished, and Unaccessable
+Purpose: Adds three new buttons to the windows right click menu: Finished, Unfinished, and Hidden
 Author: Mason L'Etoile
 Date: January 24, 2025
 */
@@ -14,27 +14,34 @@ const char* cmdPath = R"(Directory\shell\TaskTracker\command)";
 bool cmdExists() {
 	HKEY hKey;
 
-	std::cout << regPath << '\n';
-
-	if (RegOpenKeyExA(HKEY_CLASSES_ROOT, cmdPath, 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
+	if (RegOpenKeyExA(HKEY_CLASSES_ROOT, regPath, 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
 		RegCloseKey(hKey);
 		return true;
 	}
-	else {
-		return false;
-	}
+
+	return false;
 }
 
 void removeCmd() {
-	std::cout << "Removed";
+	RegDeleteKeyA(HKEY_CLASSES_ROOT, cmdPath);
+	RegDeleteKeyA(HKEY_CLASSES_ROOT, regPath);
+	std::cout << "Command Removed\n";
 }
 
 void addCmd() {
-	std::cout << "Added";
+	HKEY hKey;
+	DWORD disposition;
+
+	if (RegCreateKeyExA(HKEY_CLASSES_ROOT, regPath, 0, NULL, 0, KEY_WRITE, NULL, &hKey, &disposition) == ERROR_SUCCESS) {
+
+		std::cout << "Command Added\n";
+	} else {
+		std::cout << "Error creating registry key\n";
+	}
 }
 
 int main() {
-	if (cmdExists()) {
+	if (cmdExists()) {	
 		removeCmd();
 	}
 	else {
