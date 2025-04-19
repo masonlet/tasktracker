@@ -1,12 +1,53 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\Github\\TaskTracker\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{7B41CFF7-29BF-455E-BEC5-F9D518AAA8C4}|Installer\\Installer.vcxproj|C:\\Github\\TaskTracker\\Installer\\Installer.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{7B41CFF7-29BF-455E-BEC5-F9D518AAA8C4}|Installer\\Installer.vcxproj|solutionrelative:Installer\\Installer.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{7F9AD465-ED60-4C16-9EC3-584A1228AC49}|TaskTracker\\TaskTracker.vcxproj|C:\\Github\\TaskTracker\\TaskTracker\\TaskTracker.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{7F9AD465-ED60-4C16-9EC3-584A1228AC49}|TaskTracker\\TaskTracker.vcxproj|solutionrelative:TaskTracker\\TaskTracker.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
-      "DocumentGroups": []
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "TaskTracker.cpp",
+              "DocumentMoniker": "C:\\Github\\TaskTracker\\TaskTracker\\TaskTracker.cpp",
+              "RelativeDocumentMoniker": "TaskTracker\\TaskTracker.cpp",
+              "ToolTip": "C:\\Github\\TaskTracker\\TaskTracker\\TaskTracker.cpp",
+              "RelativeToolTip": "TaskTracker\\TaskTracker.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-04-19T07:00:16.497Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Installer.cpp",
+              "DocumentMoniker": "C:\\Github\\TaskTracker\\Installer\\Installer.cpp",
+              "RelativeDocumentMoniker": "Installer\\Installer.cpp",
+              "ToolTip": "C:\\Github\\TaskTracker\\Installer\\Installer.cpp",
+              "RelativeToolTip": "Installer\\Installer.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-04-19T07:00:15.905Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
     }
   ]
 }
