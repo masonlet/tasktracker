@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Task Tracker.cpp">
+    <ClCompile Include="TaskTracker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

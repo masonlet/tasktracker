@@ -1,118 +1,97 @@
+#pragma comment(lib, "Shell32.lib")
+
 /*
 Program name: Task Tracker
-Purpose: Adds three new buttons to the windows right click menu: Finished, Unfinished, and Hidden
+Purpose: Changes a folders icon to the selected buttons icon
 Author: Mason L'Etoile
-Date: January 24, 2025
+Date: January 26, 2025
 */
 
 #include <iostream>
-#include <Windows.h>
+#include <filesystem>
+#include <fstream>
+#include <shlobj.h>
 
-const char* REG_PATH = R"(Directory\shell\TaskTracker)";
-const char* SHELL_PATH = R"(Directory\shell\TaskTracker\shell)";
+static int error(const std::string& error) {
+	std::cout << "TaskTracker [Error]: " << error << '\n';
 
-const char* FINISHED_PATH = R"(Directory\shell\TaskTracker\shell\Finished)";
-const char* HIDDEN_PATH = R"(Directory\shell\TaskTracker\shell\Hidden)";
-const char* UNFINISHED_PATH = R"(Directory\shell\TaskTracker\shell\Unfinished)";
-const char* DEFAULT_PATH = R"(Directory\shell\TaskTracker\shell\Default)";
-
-const char* FINISHED_CMD = R"(Directory\shell\TaskTracker\shell\Finished\command)";
-const char* HIDDEN_CMD = R"(Directory\shell\TaskTracker\shell\Hidden\command)";
-const char* UNFINISHED_CMD = R"(Directory\shell\TaskTracker\shell\Unfinished\command)";
-const char* DEFAULT_CMD = R"(Directory\shell\TaskTracker\shell\Default\command)";
-
-bool cmdExists(const char* path) {
-	HKEY hKey;
-
-	if (RegOpenKeyExA(HKEY_CLASSES_ROOT, path, 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
-		RegCloseKey(hKey);
-		return true;
-	}
-
-	return false;
-}
-
-void removeKey() {
-	const char* paths[] = { FINISHED_PATH, HIDDEN_PATH, UNFINISHED_PATH, DEFAULT_PATH };
-	const char* cmdPaths[] = { FINISHED_CMD, HIDDEN_CMD, UNFINISHED_CMD, DEFAULT_CMD };
-
-	for (size_t i = 0; i < 4; i++) {
-		if (cmdExists(paths[i])) {
-			if (cmdExists(cmdPaths[i])) RegDeleteKeyA(HKEY_CLASSES_ROOT, cmdPaths[i]);
-			RegDeleteKeyA(HKEY_CLASSES_ROOT, paths[i]);
-		}
-	}
-
-	if (cmdExists(SHELL_PATH)) RegDeleteKeyA(HKEY_CLASSES_ROOT, SHELL_PATH);
-	
-	RegDeleteKeyA(HKEY_CLASSES_ROOT, REG_PATH);
-	std::cout << "Command Removed\n";
-}
-
-bool createKey(const char* path, HKEY& hKey, DWORD& disposition) {
-	LONG result = RegCreateKeyExA(HKEY_CLASSES_ROOT, path, 0, NULL, 0, KEY_WRITE, NULL, &hKey, &disposition);
-	if (result == ERROR_SUCCESS) return true;
-
-	std::cout << "Error creating registry key, error: " << result << '\n';
-	return false;
-}
-
-bool setValue(HKEY& hKey, const char* valueName, const char* value) {
-	LONG result = RegSetValueExA(hKey, valueName, 0, REG_SZ, (const BYTE*)value, static_cast<DWORD>(strlen(value) + 1));
-	if (result == ERROR_SUCCESS) return true;
-
-	std::cout << "Error setting registry value, Error: " << result << '\n';
-	return false;
-}
-
-void addKey() {
-	HKEY hKey;
-	DWORD disposition;
-
-	//Base key
-	if (!createKey(REG_PATH, hKey, disposition)) return;
-	setValue(hKey, "Icon", "shell32.dll,-4");
-	setValue(hKey, "MUIVerb", "Task Tracker");
-	setValue(hKey, "ExtendedSubCommandsKey", REG_PATH);
-
-	//Create subkeys
-	const char* subPaths[] = { FINISHED_PATH, HIDDEN_PATH, UNFINISHED_PATH, DEFAULT_PATH };
-	const char* subCommands[] = { "Finished", "Hidden", "Unfinished", "Default" };
-	const std::string subIcons[] = { "C:\\Windows\\System32\\shell32.dll,-16810", "C:\\Windows\\System32\\shell32.dll,-200", "C:\\Windows\\System32\\shell32.dll,-240", "C:\\Windows\\System32\\shell32.dll,-4" };
-
-	for (size_t i = 0; i < 4; i++) {
-		HKEY subKey, folderKey;
-
-		//Sub Key
-		if (!createKey(subPaths[i], subKey, disposition)) return;
-		setValue(subKey, "MUIVerb", subCommands[i]);
-		setValue(subKey, "Icon", subIcons[i].c_str());
-
-		//Sub Folder
-		std::string folderPath = std::string(subPaths[i]) + "\\command";
-		if (!createKey(folderPath.c_str(), folderKey, disposition)) return;	
-
-		//Sub Key Command
-		std::string cmd = "";
-
-		setValue(folderKey, NULL, cmd.c_str());
-
-		//Cleanup
-		RegCloseKey(folderKey);
-		RegCloseKey(subKey);
-	}	
-
-	//Cleanup
-	RegCloseKey(hKey);
-	std::cout << "Command Added\n";
-}
-
-int main() {
-	if (cmdExists(REG_PATH)) {	
-		removeKey();
-	}
-	else {
-		addKey();
-	}
 	system("pause");
+	return EXIT_FAILURE;
+}
+
+static void refreshIcon(const std::filesystem::path& path) {
+	//a lot of this is probably redundant, windows does not like refreshing and I do not like hard restarting explorer so it takes a long time
+	system("ie4uinit.exe -ClearIconCache");
+
+	SHChangeNotify(SHCNE_UPDATEITEM, SHCNF_PATHW, path.c_str(), NULL);
+	SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
+	SHChangeNotify(SHCNE_ALLEVENTS, SHCNF_PATHW | SHCNF_FLUSH, path.c_str(), NULL);
+	SHChangeNotify(SHCNE_ATTRIBUTES, SHCNF_PATHW | SHCNF_FLUSH, path.c_str(), NULL);
+
+	SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE, 0, (LPARAM)"Environment", SMTO_ABORTIFHUNG, 5000, NULL);
+	SHFlushSFCache();
+
+	system("ie4uinit.exe -show");
+}
+
+static bool isAdmin() {
+	bool isElevated = false;
+	HANDLE hToken = nullptr;
+
+	if( OpenProcessToken( GetCurrentProcess( ),TOKEN_QUERY,&hToken ) ) {
+		TOKEN_ELEVATION elevation{};
+        DWORD elevationSize = sizeof( TOKEN_ELEVATION );
+
+        if( GetTokenInformation( hToken, TokenElevation, &elevation, sizeof( elevation ), &elevationSize ) ) {
+            isElevated = elevation.TokenIsElevated;
+        }
+    }
+    if( hToken ) {
+        CloseHandle( hToken );
+    }
+    return isElevated;
+}
+
+int main(int argc, char* argv[]){
+	if (!isAdmin())
+		return error("Program has not been run as an administrator");
+
+	if (argc != 3) 
+		return error("Invalid argument amount\nUsage: TaskTracker.exe <folder_path> <icon_path>\n");
+
+	std::filesystem::path folderPath = std::filesystem::path(argv[1]);
+	if (!std::filesystem::exists(folderPath) || !std::filesystem::is_directory(folderPath)) 
+		return error("FolderPath: " + folderPath.string() + " is invalid");
+
+	std::filesystem::path iconPath = std::filesystem::path(argv[2]);
+	
+	std::filesystem::path desktopIniPath = folderPath / "desktop.ini";
+	if (std::filesystem::exists(desktopIniPath)) {
+		SetFileAttributesW(desktopIniPath.c_str(), FILE_ATTRIBUTE_NORMAL);
+		DeleteFileW(desktopIniPath.c_str());
+		refreshIcon(folderPath);
+	} 
+
+	if (iconPath == "C:\\Windows\\System32\\shell32.dll,-4")
+		return EXIT_SUCCESS;
+
+	std::ofstream desktopIni(desktopIniPath);
+	if (!desktopIni) 
+		return error("Error creating desktopIni file at " + desktopIniPath.string());
+		
+	desktopIni << "[.ShellClassInfo]\n";
+	desktopIni << "IconResource=" << iconPath.string() << '\n';
+	desktopIni << "[ViewState]\n";
+	desktopIni << "Mode=\n";
+	desktopIni << "Vid=\n";
+	desktopIni << "FolderType=Generic\n";
+	desktopIni.close();
+
+	if (!SetFileAttributesW(folderPath.c_str(), FILE_ATTRIBUTE_SYSTEM)) 
+		return error("Setting folder attributes");
+
+	if (!SetFileAttributesW(desktopIniPath.c_str(), FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM)) 
+		return error("Setting desktop.ini attributes");
+
+	refreshIcon(folderPath);
 }
