@@ -6,8 +6,8 @@ Easily mark folders as Finished, Hidden, Unfinished, or reset them to the Defaul
 # Features
 * Add or remove task status options from the right-click menu
 * Instantly mark folder icons with one of four states:
-	* Finished
-	* Hidden
-	* Unfinished
-	* Default
+	* ✅ Finished
+	* 🚫 Hidden
+	* ❌ Unfinished
+	* 📁 Default
 * Simple install/uninstall using a single installer
