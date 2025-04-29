@@ -4,112 +4,201 @@
 Program name: Installer
 Purpose: Installs Task Tracker program to a Windows 10 / Windows 11 computer
 Author: Mason L'Etoile
-Date: January 26, 2025
+Date: April 29, 2025
+Version: 1.0.1
 */
-#include <filesystem>
-#include <iostream>
+
 #include <Windows.h>
 #include <Winreg.h>
+#include<shlobj_core.h>
+#include <filesystem>
 #include <array>
+#include <chrono>
+#include <string>
+#include <iostream>
 
-const std::filesystem::path EXE_PATH		= "C:\\Program Files\\Task Tracker";
+constexpr std::wstring_view EXE_NAME = L"TaskTracker.exe";
 
-const std::filesystem::path REG_PATH		= "Directory\\shell\\TaskTracker";
-const std::filesystem::path SHELL_PATH      = REG_PATH / "shell";
+static std::filesystem::path getProgramFilesPath() {
+	wchar_t* path = nullptr;
 
-const std::filesystem::path FINISHED_PATH   = SHELL_PATH / "Finished";
-const std::filesystem::path HIDDEN_PATH     = SHELL_PATH / "Hidden";
-const std::filesystem::path UNFINISHED_PATH = SHELL_PATH / "Unfinished";
-const std::filesystem::path DEFAULT_PATH    = SHELL_PATH / "Default";
-
-const std::filesystem::path FINISHED_CMD   = FINISHED_PATH   / "command";
-const std::filesystem::path HIDDEN_CMD     = HIDDEN_PATH     / "command";
-const std::filesystem::path UNFINISHED_CMD = UNFINISHED_PATH / "command";
-const std::filesystem::path DEFAULT_CMD    = DEFAULT_PATH    / "command";
-
-static bool keyExists(const std::filesystem::path& path) {
-	HKEY hKey;
-
-	if (RegOpenKeyExW(HKEY_CLASSES_ROOT, path.c_str(), 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
-		RegCloseKey(hKey);
-		return true;
+	if (FAILED(SHGetKnownFolderPath(FOLDERID_ProgramFiles, 0, NULL, &path))) {
+		return L"C:\\Program Files\\";
 	}
 
+	std::filesystem::path result = path;
+	CoTaskMemFree(path);
+	return result;
+}
+static const std::filesystem::path FILE_PATH = getProgramFilesPath() / "Task Tracker";
+
+const std::filesystem::path EXE_PATH = FILE_PATH / EXE_NAME;
+const std::wstring REGISTRY_PATH   = L"Directory\\shell\\Task Tracker";
+
+const std::wstring SHELL_PATH      = REGISTRY_PATH + L"\\shell";
+const std::wstring FINISHED_PATH   = SHELL_PATH + L"\\Finished";
+const std::wstring HIDDEN_PATH     = SHELL_PATH + L"\\Hidden";
+const std::wstring UNFINISHED_PATH = SHELL_PATH + L"\\Unfinished";
+const std::wstring DEFAULT_PATH    = SHELL_PATH + L"\\Default";
+
+const std::wstring FINISHED_CMD_PATH   = FINISHED_PATH   + L"\\command";
+const std::wstring HIDDEN_CMD_PATH     = HIDDEN_PATH     + L"\\command";
+const std::wstring UNFINISHED_CMD_PATH = UNFINISHED_PATH + L"\\command";
+const std::wstring DEFAULT_CMD_PATH    = DEFAULT_PATH    + L"\\command";
+
+class RegKey {
+	HKEY hKey = nullptr;
+
+public:
+	RegKey() = default;
+    ~RegKey() { 
+		if (hKey) RegCloseKey(hKey);
+	}
+
+	RegKey(const RegKey&) = delete;
+	RegKey& operator=(const RegKey&) = delete;
+
+	operator HKEY() const { 
+		return hKey; 
+	}
+
+	HKEY* operator&() {
+		return &hKey;
+	}
+};
+
+static bool error(const std::wstring& error, bool pause = false) {
+	std::wcout << L"TaskTracker Installer [Error]: " << error << L'\n';
+
+	if (pause) {
+		std::wcout << L"Press Enter to continue...";
+		std::wcin.get();
+	}
 	return false;
 }
-static void removeKey() {
-	const std::filesystem::path paths[] = { FINISHED_PATH, HIDDEN_PATH, UNFINISHED_PATH, DEFAULT_PATH };
-	const std::filesystem::path cmdPaths[] = { FINISHED_CMD, HIDDEN_CMD, UNFINISHED_CMD, DEFAULT_CMD };
+static void message(const std::wstring& message, bool pause = false) {
+	std::wcout << L"TaskTracker Installer [Info]: " << message << L'\n';
 
-	for (size_t i = 0; i < 4; i++) {
-		if (keyExists(paths[i])) {
-			if (keyExists(cmdPaths[i]))
-				RegDeleteKeyW(HKEY_CLASSES_ROOT, cmdPaths[i].c_str());
+	if (pause) {
+		std::wcout << L"Press Enter to continue...";
+		std::wcin.get();
+	}
+}
+static bool isAdmin() {
+	bool isElevated = false;
+	HANDLE hToken = nullptr;
 
-			RegDeleteKeyW(HKEY_CLASSES_ROOT, paths[i].c_str());
+	if( OpenProcessToken( GetCurrentProcess( ), TOKEN_QUERY, &hToken ) ) {
+		TOKEN_ELEVATION elevation{};
+        DWORD returnSize = sizeof( TOKEN_ELEVATION );
+
+		if (GetTokenInformation(hToken, TokenElevation, &elevation, sizeof(elevation), &returnSize))
+			isElevated = elevation.TokenIsElevated;
+	} else
+		return error(L"OpenProcessToken failed");
+    if( hToken ) 
+        CloseHandle( hToken );
+    
+    return isElevated;
+}
+
+static bool keyExists(const std::filesystem::path& path) {
+	RegKey hKey;
+
+	if (RegOpenKeyExW(HKEY_CLASSES_ROOT, path.c_str(), 0, KEY_READ, &hKey) != ERROR_SUCCESS)
+		return false;
+
+	return true;
+}
+static bool fileExists(const std::filesystem::path& path) {
+	return std::filesystem::exists(path);
+}
+
+static bool deleteFile(const std::filesystem::path& path) {
+	if (fileExists(path))
+		if (!std::filesystem::remove(path))
+			return error(L"Failed to remove file at " + path.wstring());
+
+	message(L"File Removed at " + path.wstring());
+	return !std::filesystem::exists(path);
+}
+static bool deleteDirectory(const std::filesystem::path& path) {
+	if (fileExists(path))
+		if (!std::filesystem::remove_all(path))
+			return error(L"Failed to remove directory at " + path.wstring());
+
+	message(L"Directory Removed at " + path.wstring());
+	return !std::filesystem::exists(path);
+}
+
+static bool deleteKey(const std::filesystem::path& path) {
+	if (RegDeleteKeyW(HKEY_CLASSES_ROOT, path.c_str()) != ERROR_SUCCESS) {
+		message(L"Failed to remove key at " + path.wstring());
+		return false;
+	}
+
+	return true;
+}
+static bool deleteSubkeys(const std::filesystem::path* subkeyPaths, const size_t& count) {
+	bool success = true;
+
+	for (size_t i = 0; i < count; i++) {
+		if (RegDeleteKeyW(HKEY_CLASSES_ROOT, subkeyPaths[i].c_str()) != ERROR_SUCCESS) {
+			message(L"Failed to remove key at " + subkeyPaths[i].wstring());
+			success = false;
 		}
 	}
 
-	if (keyExists(SHELL_PATH)) 
-		RegDeleteKeyW(HKEY_CLASSES_ROOT, SHELL_PATH.c_str());
+	return success;
+}
+static bool deleteRegistryKeys() {
+	const std::filesystem::path subkeyCmdPaths[] = { FINISHED_CMD_PATH, HIDDEN_CMD_PATH, UNFINISHED_CMD_PATH, DEFAULT_CMD_PATH };
+	const std::filesystem::path subkeyPaths[] = { FINISHED_PATH, HIDDEN_PATH, UNFINISHED_PATH, DEFAULT_PATH };
+	bool success = true;
 	
-	if (keyExists(REG_PATH)) 
-		RegDeleteKeyW(HKEY_CLASSES_ROOT, REG_PATH.c_str());
+	success = deleteSubkeys(subkeyCmdPaths, std::size(subkeyCmdPaths));
+	success = deleteSubkeys(subkeyPaths, std::size(subkeyPaths));
+	
+	success = deleteKey(SHELL_PATH);
+	success = deleteKey(REGISTRY_PATH);
 
-	std::cout << "Command Removed\n";
-}
-static void removeFile() {
-	std::filesystem::remove_all(EXE_PATH);
+	if (success) message(L"Program Keys Removed");
+	else message(L"Partial / Entire failure of program key removal");
 
-	std::cout << "File Removed\n";
-}
-
-static bool error(const std::string& error, bool removeItems = true) {
-	std::cout << "\nTaskTracker Installer [Error]: " << error << "\n\n";
-
-	if (removeItems) {
-		removeKey();
-		removeFile();
-	}
-
-	system("pause");
-	return false;
+	return success;
 }
 
-struct SubKey {
-	std::wstring name;
-	std::filesystem::path path;
-	std::wstring iconPath;
-};
-
-static bool createKey(const std::filesystem::path& path, HKEY& hKey, DWORD& disposition) {
-	LONG result = RegCreateKeyExW(HKEY_CLASSES_ROOT, path.c_str(), 0, NULL, 0, KEY_WRITE, NULL, &hKey, &disposition);
-	if (result == ERROR_SUCCESS) 
-		return true;
-
-	return error("Creating registry key: " + result);
+static bool createKey(HKEY hKey, const std::wstring& path, RegKey& hKeyHandle, DWORD disposition) {
+	LONG result = RegCreateKeyExW(hKey, path.c_str(), 0, NULL, 0, KEY_WRITE, NULL, &hKeyHandle, &disposition);
+	if (result != ERROR_SUCCESS) 
+		return error(L"Failed to create registry key " + std::to_wstring(result) + L" at " + path);
+	
+	return true;
 }
-static bool setValue(HKEY& hKey, const std::wstring& valueName, const std::wstring& value) {
-	LONG result = RegSetValueExW(hKey, valueName.c_str(), 0, REG_SZ, reinterpret_cast<const BYTE*>(value.c_str()), static_cast<DWORD>(value.size() + 1) * sizeof(wchar_t));
-	if (result == ERROR_SUCCESS)
-		return true;
+static bool setValue(RegKey& hKey, const std::wstring& valueName, const std::wstring& value) {
+	LONG result = RegSetValueExW(hKey, valueName.c_str(), 0, REG_SZ, reinterpret_cast<const BYTE*>(value.c_str()), static_cast<DWORD>((value.size() + 1) * sizeof(wchar_t)));
+	if (result != ERROR_SUCCESS)
+		return error(L"Failed to set registry value " + std::to_wstring(result));
 
-	return error("Setting registry value: " + result);
+	return true;
 }
-static bool createKeys() {
-	HKEY hKey;
-	DWORD disposition;
+static bool createRegistryKeys() {
+	RegKey hKey;
+	DWORD disposition{};
 
 	//Base key
-	if (!createKey(REG_PATH, hKey, disposition)) 
-		return error("Creating Registry key");
+	if (!createKey(HKEY_CLASSES_ROOT, REGISTRY_PATH, hKey, disposition))
+		return error(L"Failed to create Main Registry key");
 
-	if (!setValue(hKey, L"Icon", L"shell32.dll,-4") ||
-		!setValue(hKey, L"MUIVerb", L"Task Tracker") ||
-		!setValue(hKey, L"ExtendedSubCommandsKey", REG_PATH))
-		return error("Setting Registry key values");
+	//Base Key Values
+	if (!setValue(hKey, L"Icon", L"shell32.dll,-4") || !setValue(hKey, L"MUIVerb", L"Task Tracker") || !setValue(hKey, L"ExtendedSubCommandsKey", REGISTRY_PATH))
+		return error(L"Failed to set Registry key values");
 
-	//Sub keys
+	struct SubKey {
+		const std::wstring name;
+		const std::filesystem::path path;
+		const std::wstring iconPath;
+	};
 	const std::array<SubKey, 4> subCommands = {
 		SubKey{L"Finished", FINISHED_PATH, L"C:\\Windows\\System32\\shell32.dll,-16810"},
 		SubKey{L"Hidden", HIDDEN_PATH, L"C:\\Windows\\System32\\shell32.dll,-200"},
@@ -118,87 +207,80 @@ static bool createKeys() {
 	};
 
 	for (const SubKey& subCommand : subCommands) {
-		HKEY subKey, folderKey;
+		RegKey subKey, folderKey;
 
 		//Sub Key
-		if (!createKey(subCommand.path, subKey, disposition)) 
-			return error("Creating Registry sub key: " + subCommand.path.string());
+		if (!createKey(HKEY_CLASSES_ROOT, subCommand.path, subKey, disposition))
+			return error(L"Failed to create Registry subkey: " + subCommand.path.wstring());
 
-		setValue(subKey, L"MUIVerb", subCommand.name);
-		setValue(subKey, L"Icon", subCommand.iconPath);
+		//Sub Key Values
+		if (!setValue(subKey, L"MUIVerb", subCommand.name) ||
+			!setValue(subKey, L"Icon", subCommand.iconPath))
+			return error(L"Failed to set Registry subkey " + subCommand.path.wstring() + L" values");
 
 		//Sub Folder
 		std::filesystem::path folderPath = subCommand.path / "command";
-		if (!createKey(folderPath, folderKey, disposition)) 
-			return error("Creating Registry key");	
+		if (!createKey(HKEY_CLASSES_ROOT, folderPath, folderKey, disposition)) 
+			return error(L"Failed to create Registry subkey " + folderPath.wstring());	
 
 		//Sub Key Command
-		const std::wstring cmd = EXE_PATH.wstring() + L"\\TaskTracker.exe \"%V\" \"" + subCommand.iconPath + L"\"";
-		setValue(folderKey, L"", cmd);
-
-		//Cleanup
-		RegCloseKey(folderKey);
-		RegCloseKey(subKey);
+		const std::wstring cmd = L"\"" + EXE_PATH.wstring() + L"\" \"%V\" \"" + subCommand.iconPath + L"\"";
+		if (!setValue(folderKey, L"", cmd))
+			return error(L"Failed to set Registry subkey " + folderPath.wstring() + L" command");
 	}	
 
-	//Cleanup
-	RegCloseKey(hKey);
-	std::cout << "Command Added\n";
+	message(L"Program Keys Added");
 	return true;
 }
 
-static bool fileExists(const std::filesystem::path& path) {
-	if (std::filesystem::exists(path))
-		return true;
+static bool createDirectory(const std::filesystem::path& path) {
+	if (!std::filesystem::exists(path) && !std::filesystem::create_directories(path))
+		return error(L"Failed to create TaskTracker folder at" + path.wstring());
 
-	return false;
+	message(L"Folder added at " + path.wstring());
+	return true;
 }
-static bool createFile() {
-	if (!std::filesystem::create_directories(EXE_PATH))
-		return error("Error creating TaskTracker folder at" + EXE_PATH.string());
-
-	std::cout << "Exe folder added at " + EXE_PATH.string() + '\n';
-
+static bool copyFile(const std::wstring& name, const std::filesystem::path& path) {
 	try {
-		std::filesystem::copy_file("TaskTracker.exe", EXE_PATH.wstring() + L"\\TaskTracker.exe", std::filesystem::copy_options::overwrite_existing);
-	} catch (const std::filesystem::filesystem_error& e) {
-		return error("addFile: " + std::string(e.what()));
+		std::filesystem::copy_file(name, path.wstring(), std::filesystem::copy_options::overwrite_existing);
+	} catch (const std::filesystem::filesystem_error) {
+		return error(L"Failed to copy executables to " + path.wstring());
 	}
 
-	std::cout << "Exe copied to " + EXE_PATH.string() + "\\TaskTracker.exe" + '\n';
-
+	message(L"Exe copied to " + FILE_PATH.wstring() + std::wstring(EXE_NAME));
 	return true;
-}
-
-static bool isAdmin() {
-	bool isElevated = false;
-	HANDLE hToken = nullptr;
-
-	if( OpenProcessToken( GetCurrentProcess( ),TOKEN_QUERY,&hToken ) ) {
-		TOKEN_ELEVATION elevation{};
-        DWORD elevationSize = sizeof( TOKEN_ELEVATION );
-
-        if( GetTokenInformation( hToken, TokenElevation, &elevation, sizeof( elevation ), &elevationSize ) ) {
-            isElevated = elevation.TokenIsElevated;
-        }
-    }
-    if( hToken ) {
-        CloseHandle( hToken );
-    }
-    return isElevated;
 }
 
 int main() {
-	if (!isAdmin())
-		return error("Program has not been run as an adminstrator", false);
+	if (!isAdmin()) 
+		return error(L"Program has not been run as an administrator", true);
 
-	if (keyExists(REG_PATH) || fileExists(EXE_PATH)) {	
-		removeKey();
-		removeFile();
+	if (keyExists(REGISTRY_PATH) || fileExists(FILE_PATH)) {	
+		if (keyExists(REGISTRY_PATH)) 
+			if (!deleteRegistryKeys())
+				return error(L"Failed to delete keys", true);
+		
+		message(L"Keys successfully removed");
+
+		if(fileExists(EXE_PATH))
+			if (!deleteFile(EXE_PATH)) 
+				return error(L"Failed to delete executable", true);
+
+		if (fileExists(FILE_PATH)) {
+			if (!deleteDirectory(FILE_PATH))
+				return error(L"Failed to remove file", true);
+		}
+
+		message(L"File successfully removed");
+		message(L"Uninstallation Completed", true);
+	} else {
+		if (!createRegistryKeys() || 
+			!createDirectory(FILE_PATH) || 
+			!copyFile(std::wstring(EXE_NAME), EXE_PATH))
+			return error(L"Failed to install", true);
+
+		message(L"Installation Completed", true);
 	}
-	else {
-		createKeys();
-		createFile();
-	}
-	system("pause");
+
+	return EXIT_SUCCESS;
 }
