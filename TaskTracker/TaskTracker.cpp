@@ -4,7 +4,8 @@
 Program name: Task Tracker
 Purpose: Changes a folders icon to the selected buttons icon
 Author: Mason L'Etoile
-Date: January 26, 2025
+Date: May 04, 2025
+Version: 1.0.0
 */
 
 #include <iostream>
@@ -57,11 +58,11 @@ int wmain(int argc, wchar_t* argv[]){
 	if (!isAdmin())
 		return error(L"Program has not been run as an administrator");
 	if (argc != 3) 
-		return error(L"Invalid argument amount\nUsage: TaskTracker.exe <folder_path> <icon_path>\n");
+		return error(L"Invalid argument amount\nUsage: TaskTracker.exe <folder_path> <icon_path>");
 
 	std::filesystem::path folderPath = std::filesystem::path(argv[1]);
 	if (!std::filesystem::exists(folderPath) || !std::filesystem::is_directory(folderPath)) 
-		return error(L"FolderPath: " + folderPath.wstring() + L" is invalid");
+		return error(L"Folder path \"" + folderPath.wstring() + L"\" is invalid");
 
 	std::filesystem::path desktopIniPath = folderPath / "desktop.ini";
 	if (std::filesystem::exists(desktopIniPath)) {
