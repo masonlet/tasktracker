@@ -49,8 +49,6 @@ static void refreshIcon(const std::filesystem::path& path) {
 }
 
 int wmain(int argc, wchar_t* argv[]){
-	if (!isAdmin())
-		return error(L"Program has not been run as an administrator");
 	if (argc != 3) 
 		return error(L"Invalid argument amount\nUsage: TaskTracker.exe <folder_path> <icon_path>");
 

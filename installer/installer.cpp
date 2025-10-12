@@ -256,13 +256,10 @@ struct COMInitializer {
 	COMInitializer() { result = CoInitializeEx(NULL, COINIT_MULTITHREADED); }
 	~COMInitializer() { CoUninitialize(); }
 
-	operator HRESULT() const {
-		return result;
-	}
+	operator HRESULT() const { return result; }
 };
 int wmain() {
-	COMInitializer comInitializer;
-	if (FAILED(comInitializer))
+	if (FAILED(COMInitializer{}))
 		return error(L"Failed to initialize COM library");
 
 	if (!isAdmin()) {
@@ -273,18 +270,15 @@ int wmain() {
 	if (keyExists(REGISTRY_PATH) || fileExists(FILE_PATH)) {	
 		if (keyExists(REGISTRY_PATH) && !deleteTasktrackerKeys()) 
 			return error(L"Failed to delete keys", true);
-		else 
-			message(L"Keys successfully removed");
+		else message(L"Keys successfully removed");
 
 		if (fileExists(EXE_PATH) && !deleteFile(EXE_PATH))
 			return error(L"Failed to delete executable", true);
-		else
-			message(L"Executable successfully deleted");
+		else message(L"Executable successfully deleted");
 
 		if (fileExists(FILE_PATH) && !deleteDirectory(FILE_PATH)) 
 			return error(L"Failed to remove file", true);
-		else 
-			message(L"File successfully removed");
+		else message(L"File successfully removed");
 
 		message(L"Uninstallation Completed", true);
 	} else {
