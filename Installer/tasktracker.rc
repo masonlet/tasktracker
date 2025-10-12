@@ -1,0 +1,4 @@
+#include <Windows.h>
+#include "resource.h"
+
+TASKTRACKER_EXE RCDATA "TaskTracker.exe"

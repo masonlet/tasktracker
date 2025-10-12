@@ -1,13 +1,5 @@
 #pragma comment(lib, "Shell32.lib")
 
-/*
-Program name: Task Tracker
-Purpose: Changes a folders icon to the selected buttons icon
-Author: Mason L'Etoile
-Date: May 05, 2025
-Version: 1.0.0
-*/
-
 #include <iostream>
 #include <filesystem>
 #include <fstream>

@@ -1,23 +1,15 @@
-/*
-Program name: Task Tracker Installer
-Purpose: Installs Task Tracker program to a Windows 10 / Windows 11 computer
-Author: Mason L'Etoile
-Date: May 05, 2025
-Version: 1.1.0
-*/
+#pragma comment(lib, "Shell32.lib")
 
 #include <Windows.h>
 #include <Winreg.h>
-#include<shlobj_core.h>
+#include <shlobj_core.h>
 #include <filesystem>
 #include <array>
 #include <chrono>
 #include <string>
 #include <iostream>
 #include <fstream>
-#include "tasktracker_data.h"
-
-#pragma comment(lib, "Shell32.lib")
+#include "resource.h"
 
 constexpr std::wstring_view EXE_NAME = L"TaskTracker.exe";
 
@@ -170,12 +162,28 @@ static bool createDirectory(const std::filesystem::path& path) {
 	return true;
 }
 static bool extractTaskTrackerExe(const std::filesystem::path& toPath) {
-	std::ofstream outFile(toPath, std::ios::binary);
-	if (!outFile)
-		return error(L"Failed to create file at " + toPath.wstring());
+	HMODULE hModule = GetModuleHandle(NULL);
+	if (!hModule) return error(L"Failed to get module handle");
 
-	outFile.write(reinterpret_cast<const char*>(tasktracker_data), tasktracker_data_size);
+	HRSRC hResource = FindResource(hModule, MAKEINTRESOURCE(TASKTRACKER_EXE), RT_RCDATA);
+	if (!hResource) return error(L"Failed to find TaskTracker.exe resource");
+
+	HGLOBAL hLoadedResource = LoadResource(hModule, hResource);
+	if (!hLoadedResource) return error(L"Failed to load TaskTracker.exe resource");
+
+	const void* pResourceData = LockResource(hLoadedResource);
+	if (!pResourceData) return error(L"Failed to lock TaskTracker.exe resource");
+
+	DWORD resourceSize = SizeofResource(hModule, hResource);
+	if (resourceSize == 0) return error(L"TaskTracker.exe resource has zero size");
+
+	std::ofstream outFile(toPath, std::ios::binary);
+	if (!outFile) return error(L"Failed to create file at " + toPath.wstring());
+
+	outFile.write(static_cast<const char*>(pResourceData), resourceSize);
 	outFile.close();
+	if (!outFile.good())
+		return error(L"Failed to write TaskTracker.exe to " + toPath.wstring());
 
 	return true;
 }
