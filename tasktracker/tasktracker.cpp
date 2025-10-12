@@ -13,24 +13,6 @@ static int error(const std::wstring_view& error) {
 	return EXIT_FAILURE;
 }
 
-static bool isAdmin() {
-	bool isElevated = false;
-	HANDLE hToken = nullptr;
-
-	if( OpenProcessToken( GetCurrentProcess( ),TOKEN_QUERY,&hToken ) ) {
-		TOKEN_ELEVATION elevation{};
-        DWORD elevationSize = sizeof( TOKEN_ELEVATION );
-
-        if( GetTokenInformation( hToken, TokenElevation, &elevation, sizeof( elevation ), &elevationSize ) ) {
-            isElevated = elevation.TokenIsElevated;
-        }
-    }
-    if( hToken ) {
-        CloseHandle( hToken );
-    }
-    return isElevated;
-}
-
 static void refreshIcon(const std::filesystem::path& path) {
 	//a lot of this is probably redundant, windows does not like refreshing and I do not like hard restarting explorer so it takes a long time
 	system("ie4uinit.exe -ClearIconCache");
@@ -49,28 +31,26 @@ static void refreshIcon(const std::filesystem::path& path) {
 }
 
 int wmain(int argc, wchar_t* argv[]){
-	if (argc != 3) 
-		return error(L"Invalid argument amount\nUsage: TaskTracker.exe <folder_path> <icon_path>");
+	if (argc != 3) return error(L"Invalid argument amount\nUsage: TaskTracker.exe <folder_path> <icon_path>");
 
-	std::filesystem::path folderPath = std::filesystem::path(argv[1]);
+	const std::filesystem::path folderPath{ argv[1] };
 	if (!std::filesystem::exists(folderPath) || !std::filesystem::is_directory(folderPath)) 
 		return error(L"Folder path \"" + folderPath.wstring() + L"\" is invalid");
 
-	std::filesystem::path desktopIniPath = folderPath / "desktop.ini";
+	const std::filesystem::path desktopIniPath{ folderPath / "desktop.ini" };
 	if (std::filesystem::exists(desktopIniPath)) {
 		SetFileAttributesW(desktopIniPath.c_str(), FILE_ATTRIBUTE_NORMAL);
 		DeleteFileW(desktopIniPath.c_str());
 	} 
 
-	std::filesystem::path iconPath = std::filesystem::path(argv[2]);
+	const std::filesystem::path iconPath{ argv[2] };
 	if (iconPath.wstring() == L"C:\\Windows\\System32\\shell32.dll,-4") {
 		refreshIcon(folderPath);
 		return EXIT_SUCCESS;
 	}
 
 	std::ofstream desktopIniFile(desktopIniPath);
-	if (!desktopIniFile) 
-		return error(L"Failed to create desktopIni file at " + desktopIniPath.wstring());
+	if (!desktopIniFile) return error(L"Failed to create desktopIni file at " + desktopIniPath.wstring());
 		
 	desktopIniFile << "[.ShellClassInfo]\n" 
 				   << "IconResource=" << iconPath.string() << '\n'
