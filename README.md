@@ -10,10 +10,10 @@ Easily mark folders as Finished, Hidden, Unfinished, or reset them to the Defaul
 
 ## Preview
 ### Context Menu
-![Context Menu](./Images/Menu.png)
+![Context Menu](./images/menu.png)
 
 ### Folder Tracking Example
-![Example](./Images/Example.png)
+![Example](./images/example.png)
 
 ## Installation
 Download the latest installer from the [Releases](https://github.com/Masonlet/TaskTracker/releases) page and run it.  
