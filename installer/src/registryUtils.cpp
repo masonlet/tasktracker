@@ -17,7 +17,7 @@ const std::wstring DEFAULT_CMD_PATH = DEFAULT_PATH + L"\\command";
 
 bool keyExists(const std::wstring_view& path) {
 	RegKey hKey;
-	return RegOpenKeyExW(HKEY_CLASSES_ROOT, path.data(), 0, KEY_READ, &hKey) != ERROR_SUCCESS;
+	return RegOpenKeyExW(HKEY_CLASSES_ROOT, path.data(), 0, KEY_READ, &hKey) == ERROR_SUCCESS;
 }
 
 bool deleteKey(const std::wstring& path) {
