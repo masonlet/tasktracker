@@ -25,11 +25,11 @@ static void refreshIcon(const std::filesystem::path& path) {
 }
 
 int wmain(int argc, wchar_t* argv[]){
-	if (argc != 3) return error_exit(L"Invalid argument amount\nUsage: TaskTracker.exe <folder_path> <icon_path>");
+	if (argc != 3) return error(L"Invalid argument amount\nUsage: TaskTracker.exe <folder_path> <icon_path>");
 
 	const std::filesystem::path folderPath{ argv[1] };
 	if (!std::filesystem::exists(folderPath) || !std::filesystem::is_directory(folderPath)) 
-		return error_exit(L"Folder path \"" + folderPath.wstring() + L"\" is invalid");
+		return error(L"Folder path \"" + folderPath.wstring() + L"\" is invalid");
 
 	const std::filesystem::path desktopIniPath{ folderPath / "desktop.ini" };
 	if (std::filesystem::exists(desktopIniPath)) {
@@ -44,7 +44,7 @@ int wmain(int argc, wchar_t* argv[]){
 	}
 
 	std::ofstream desktopIniFile(desktopIniPath);
-	if (!desktopIniFile) return error_exit(L"Failed to create desktopIni file at " + desktopIniPath.wstring());
+	if (!desktopIniFile) return error(L"Failed to create desktopIni file at " + desktopIniPath.wstring());
 		
 	desktopIniFile << "[.ShellClassInfo]\n" 
 				   << "IconResource=" << iconPath.string() << '\n'
@@ -56,9 +56,9 @@ int wmain(int argc, wchar_t* argv[]){
 	desktopIniFile.close();
 
 	if (!SetFileAttributesW(folderPath.c_str(), FILE_ATTRIBUTE_SYSTEM)) 
-		return error_exit(L"Failed to set folder attributes");
+		return error(L"Failed to set folder attributes");
 	if (!SetFileAttributesW(desktopIniPath.c_str(), FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM)) 
-		return error_exit(L"Failed to set desktop.ini attributes");
+		return error(L"Failed to set desktop.ini attributes");
 
 	refreshIcon(folderPath);
 	return EXIT_SUCCESS;

@@ -16,5 +16,5 @@ bool keyExists(const std::wstring_view& path);
 bool deleteKey(const std::wstring& path);
 
 bool createTaskTrackerKeys();
-bool deleteTasktrackerKeys();
+bool deleteTaskTrackerKeys();
 

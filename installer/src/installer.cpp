@@ -21,28 +21,28 @@ int wmain() {
 
 	if (!isAdmin()) {
 		MessageBoxW(NULL, L"Must be ran as administrator", L"Administrator Required", MB_OK | MB_ICONERROR);
-		return error(L"Program has not been run as an administrator", true);
+		return error(L"Program has not been run as an administrator");
 	}
 
 	if (keyExists(REGISTRY_PATH) || fileExists(FILE_PATH)) {	
-		if (keyExists(REGISTRY_PATH) && !deleteTasktrackerKeys()) 
-			return error(L"Failed to delete keys", true);
-		else message(L"Keys successfully removed");
+		if (keyExists(REGISTRY_PATH) && !deleteTaskTrackerKeys()) 
+			return error(L"Failed to delete keys");
+		else log(L"Keys successfully removed");
 
 		if (fileExists(EXE_PATH) && !deleteFile(EXE_PATH))
-			return error(L"Failed to delete executable", true);
-		else message(L"Executable successfully deleted");
+			return error(L"Failed to delete executable");
+		else log(L"Executable successfully deleted");
 
 		if (fileExists(FILE_PATH) && !deleteDirectory(FILE_PATH)) 
-			return error(L"Failed to remove file", true);
-		else message(L"File successfully removed");
+			return error(L"Failed to remove file");
+		else log(L"File successfully removed");
 
-		message(L"Uninstallation Completed", true);
+		log(L"Uninstallation Completed", true);
 	} else {
 		if (!createTaskTrackerKeys() || !createDirectory(FILE_PATH) || !extractTaskTrackerExe(EXE_PATH))
-			return error(L"Failed to install", true);
+			return error(L"Failed to install");
 
-		message(L"Installation Completed", true);
+		log(L"Installation Completed", true);
 	}
 
 	return EXIT_SUCCESS;

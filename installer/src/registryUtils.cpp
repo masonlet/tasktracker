@@ -17,35 +17,26 @@ const std::wstring DEFAULT_CMD_PATH = DEFAULT_PATH + L"\\command";
 
 bool keyExists(const std::wstring_view& path) {
 	RegKey hKey;
-
-	if (RegOpenKeyExW(HKEY_CLASSES_ROOT, path.data(), 0, KEY_READ, &hKey) != ERROR_SUCCESS)
-		return false;
-
-	return true;
+	return RegOpenKeyExW(HKEY_CLASSES_ROOT, path.data(), 0, KEY_READ, &hKey) != ERROR_SUCCESS;
 }
 
 bool deleteKey(const std::wstring& path) {
-	if (RegDeleteTreeW(HKEY_CLASSES_ROOT, path.c_str()) != ERROR_SUCCESS) {
-		message(L"Failed to remove key at " + path);
-		return false;
-	}
-
-	return true;
+	return RegDeleteTreeW(HKEY_CLASSES_ROOT, path.c_str()) != ERROR_SUCCESS
+		? log(L"Failed to remove key at " + path, true)
+		: log(L"Removed key at " + path);
 }
 
 bool createRegistryKey(const HKEY hKey, const std::wstring& path, RegKey& hKeyHandle, DWORD& disposition) {
 	LONG result = RegCreateKeyExW(hKey, path.c_str(), 0, NULL, 0, KEY_WRITE, NULL, &hKeyHandle, &disposition);
-	if (result != ERROR_SUCCESS)
-		return error(L"Failed to create registry key " + std::to_wstring(result) + L" at " + path);
-
-	return true;
+	return (result != ERROR_SUCCESS)
+		? log(L"Failed to create registry key " + std::to_wstring(result) + L" at " + path, true)
+		: log(L"Created key at " + path);
 }
 bool setRegistryValue(RegKey& hKey, const std::wstring& valueName, const std::wstring& value) {
 	LONG result = RegSetValueExW(hKey, valueName.c_str(), 0, REG_SZ, reinterpret_cast<const BYTE*>(value.c_str()), static_cast<DWORD>((value.size() + 1) * sizeof(wchar_t)));
-	if (result != ERROR_SUCCESS)
-		return error(L"Failed to set registry value " + std::to_wstring(result));
-
-	return true;
+	return (result != ERROR_SUCCESS)
+		? log(L"Failed to set registry value " + std::to_wstring(result), true)
+		: true;
 }
 
 bool createTaskTrackerKeys() {
@@ -57,8 +48,10 @@ bool createTaskTrackerKeys() {
 		return error(L"Failed to create Main Registry key");
 
 	//Base Key Values
-	if (!setRegistryValue(hKey, L"Icon", L"shell32.dll,-4") || !setRegistryValue(hKey, L"MUIVerb", L"Task Tracker") || !setRegistryValue(hKey, L"ExtendedSubCommandsKey", REGISTRY_PATH))
-		return error(L"Failed to set Registry key values");
+	if (!setRegistryValue(hKey, L"Icon", L"shell32.dll,-4") 
+	 || !setRegistryValue(hKey, L"MUIVerb", L"Task Tracker") 
+	 || !setRegistryValue(hKey, L"ExtendedSubCommandsKey", REGISTRY_PATH)
+		) return error(L"Failed to set Registry key values");
 
 	struct SubKey {
 		const std::wstring name;
@@ -88,22 +81,22 @@ bool createTaskTrackerKeys() {
 		const std::filesystem::path folderPath{ subCommand.path / "command" };
 		if (!createRegistryKey(HKEY_CLASSES_ROOT, folderPath, folderKey, disposition))
 			return error(L"Failed to create Registry subkey " + folderPath.wstring());
-
+		 
 		//Sub Key Command
 		const std::wstring cmd = L"\"" + EXE_PATH.wstring() + L"\" \"%V\" \"" + subCommand.iconPath + L"\"";
 		if (!setRegistryValue(folderKey, L"", cmd))
 			return error(L"Failed to set Registry subkey " + folderPath.wstring() + L" command");
 	}
 
-	message(L"Program Keys Added");
-	return true;
+	return log(L"Program Keys Added");
 }
-bool deleteTasktrackerKeys() {
-	bool success = true;
+bool deleteTaskTrackerKeys() {
+	bool success{ true };
 
 	success &= deleteKey(SHELL_PATH);
 	success &= deleteKey(REGISTRY_PATH);
 
-	if (success) message(L"Program Keys Removed");
-	return success ? true : error(L"Partial / Entire failure of program key removal");
+	return success 
+		? log(L"Program Keys Removed") 
+		: error(L"Partial / Entire failure of program key removal");
 }

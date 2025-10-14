@@ -2,11 +2,10 @@
 #include "log.hpp"
 
 std::filesystem::path getProgramFilesPath() {
-	wchar_t* path = nullptr;
+	wchar_t* path{ nullptr };
 
-	if (FAILED(SHGetKnownFolderPath(FOLDERID_ProgramFiles, 0, NULL, &path))) {
+	if (FAILED(SHGetKnownFolderPath(FOLDERID_ProgramFiles, 0, nullptr, &path))) 
 		return L"C:\\Program Files\\";
-	}
 
 	CoTaskMemFree(path);
 	return std::filesystem::path(path);
