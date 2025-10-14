@@ -55,7 +55,7 @@ bool createTaskTrackerKeys() {
 
 	struct SubKey {
 		const std::wstring name;
-		const std::filesystem::path path;
+		const Path path;
 		const std::wstring iconPath;
 	};
 	const std::array<SubKey, 4> subCommands = {
@@ -76,9 +76,9 @@ bool createTaskTrackerKeys() {
 		if (!setRegistryValue(subKey, L"MUIVerb", subCommand.name)
 			|| !setRegistryValue(subKey, L"Icon", subCommand.iconPath))
 			return error(L"Failed to set Registry subkey " + subCommand.path.wstring() + L" values");
-
+		
 		//Sub Folder
-		const std::filesystem::path folderPath{ subCommand.path / "command" };
+		const Path folderPath{ subCommand.path / "command" };
 		if (!createRegistryKey(HKEY_CLASSES_ROOT, folderPath, folderKey, disposition))
 			return error(L"Failed to create Registry subkey " + folderPath.wstring());
 		 

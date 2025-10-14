@@ -6,14 +6,30 @@
 #include "systemUtils.hpp"
 #include "fileUtils.hpp"
 
-#include <Windows.h>
-#include <Winreg.h>
-#include <shlobj_core.h>
-#include <filesystem>
-#include <array>
-#include <chrono>
-#include <iostream>
 #include <fstream>
+
+static bool extractTaskTrackerExe(const Path& toPath) {
+	HRSRC hResource = FindResource(NULL, MAKEINTRESOURCE(TASKTRACKER_EXE), RT_RCDATA);
+	if (!hResource) return error(L"Failed to find TaskTracker.exe resource");
+
+	HGLOBAL hLoadedResource = LoadResource(NULL, hResource);
+	if (!hLoadedResource) return error(L"Failed to load TaskTracker.exe resource");
+
+	const void* pResourceData = LockResource(hLoadedResource);
+	if (!pResourceData) return error(L"Failed to lock TaskTracker.exe resource");
+
+	DWORD resourceSize = SizeofResource(NULL, hResource);
+	if (resourceSize == 0) return error(L"TaskTracker.exe resource has zero size");
+
+	std::ofstream outFile(toPath, std::ios::binary);
+	if (!outFile) return error(L"Failed to create file at " + toPath.wstring());
+
+	outFile.write(static_cast<const char*>(pResourceData), resourceSize);
+	outFile.close();
+	return outFile.good()
+		? log(L"Successfully extracted TaskTracker.exe to " + toPath.wstring())
+		: log(L"Failed to write TaskTracker.exe to " + toPath.wstring(), true);
+}
 
 int wmain() {
 	if (FAILED(COMInitializer{}))

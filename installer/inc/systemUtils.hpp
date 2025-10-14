@@ -1,7 +1,7 @@
 #pragma once
 
 #include <shlobj_core.h>
-#include <filesystem>
+#include "filePath.h"
 
 struct RegKey {
 	HKEY hKey = nullptr;
@@ -27,5 +27,5 @@ struct COMInitializer {
 	operator HRESULT() const { return result; }
 };
 
-std::filesystem::path getProgramFilesPath();
+Path getProgramFilesPath();
 bool isAdmin();

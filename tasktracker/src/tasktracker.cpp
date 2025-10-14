@@ -1,13 +1,12 @@
 #pragma comment(lib, "Shell32.lib")
 
+#include "fileUtils.hpp"
 #include "log.hpp"
 
-#include <iostream>
-#include <filesystem>
 #include <fstream>
 #include <shlobj.h>
 
-static void refreshIcon(const std::filesystem::path& path) {
+static void refreshIcon(const Path& path) {
 	//a lot of this is probably redundant, windows does not like refreshing and I do not like hard restarting explorer so it takes a long time
 	system("ie4uinit.exe -ClearIconCache");
 
@@ -27,17 +26,17 @@ static void refreshIcon(const std::filesystem::path& path) {
 int wmain(int argc, wchar_t* argv[]){
 	if (argc != 3) return error(L"Invalid argument amount\nUsage: TaskTracker.exe <folder_path> <icon_path>");
 
-	const std::filesystem::path folderPath{ argv[1] };
-	if (!std::filesystem::exists(folderPath) || !std::filesystem::is_directory(folderPath)) 
+	const Path folderPath{ argv[1] };
+	if (!fileExists(folderPath) || !std::filesystem::is_directory(folderPath)) 
 		return error(L"Folder path \"" + folderPath.wstring() + L"\" is invalid");
 
-	const std::filesystem::path desktopIniPath{ folderPath / "desktop.ini" };
-	if (std::filesystem::exists(desktopIniPath)) {
+	const Path desktopIniPath{ folderPath / "desktop.ini" };
+	if (fileExists(desktopIniPath)) {
 		SetFileAttributesW(desktopIniPath.c_str(), FILE_ATTRIBUTE_NORMAL);
 		DeleteFileW(desktopIniPath.c_str());
 	} 
 
-	const std::filesystem::path iconPath{ argv[2] };
+	const Path iconPath{ argv[2] };
 	if (iconPath.wstring() == L"C:\\Windows\\System32\\shell32.dll,-4") {
 		refreshIcon(folderPath);
 		return EXIT_SUCCESS;
@@ -52,11 +51,11 @@ int wmain(int argc, wchar_t* argv[]){
 				   << "Mode=\n"
 				   << "Vid=\n"
 				   << "FolderType=Generic\n";
-
 	desktopIniFile.close();
 
 	if (!SetFileAttributesW(folderPath.c_str(), FILE_ATTRIBUTE_SYSTEM)) 
 		return error(L"Failed to set folder attributes");
+
 	if (!SetFileAttributesW(desktopIniPath.c_str(), FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM)) 
 		return error(L"Failed to set desktop.ini attributes");
 
