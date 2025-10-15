@@ -80,12 +80,12 @@ bool createTaskTrackerKeys() {
 		//Sub Folder
 		const Path folderPath{ subCommand.path / "command" };
 		if (!createRegistryKey(HKEY_CLASSES_ROOT, folderPath, folderKey, disposition))
-			return error(L"Failed to create Registry subkey " + folderPath.wstring());
+			return log(L"Failed to create Registry subkey " + folderPath.wstring(), true);
 		 
 		//Sub Key Command
 		const std::wstring cmd = L"\"" + EXE_PATH.wstring() + L"\" \"%V\" \"" + subCommand.iconPath + L"\"";
 		if (!setRegistryValue(folderKey, L"", cmd))
-			return error(L"Failed to set Registry subkey " + folderPath.wstring() + L" command");
+			return log(L"Failed to set Registry subkey " + folderPath.wstring() + L" command", true);
 	}
 
 	return log(L"Program keys successfully added");
@@ -98,5 +98,5 @@ bool deleteTaskTrackerKeys() {
 
 	return success 
 		? log(L"Program Keys successfully removed") 
-		: error(L"Partial / Entire failure of program key removal");
+		: log(L"Partial / Entire failure of program key removal", true);
 }

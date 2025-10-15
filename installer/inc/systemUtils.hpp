@@ -1,7 +1,8 @@
 #pragma once
 
-#include <shlobj_core.h>
 #include "filePath.h"
+
+#include <shlobj_core.h>
 
 struct RegKey {
 	HKEY hKey = nullptr;

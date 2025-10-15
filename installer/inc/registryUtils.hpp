@@ -1,8 +1,10 @@
 #pragma once
 
+#include "filePath.h"
+#include "systemUtils.hpp"
+
 #include <string>
 #include <filesystem>
-#include "systemUtils.hpp"
 
 constexpr std::wstring_view EXE_NAME = L"TaskTracker.exe";
 static const Path FILE_PATH = getProgramFilesPath() / "Task Tracker";
