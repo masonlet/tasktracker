@@ -20,6 +20,12 @@ struct RegKey {
 	HKEY* operator&() { return &hKey; }
 };
 
+struct SubKey {
+	const std::wstring name;
+	const Path path;
+	const std::wstring iconPath;
+};
+
 struct COMInitializer {
 	HRESULT result;
 	COMInitializer() { result = CoInitializeEx(NULL, COINIT_MULTITHREADED); }

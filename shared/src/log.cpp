@@ -12,6 +12,7 @@ bool log(const std::wstring_view& message, const bool error, const bool pause) {
 
 	return !error;
 }
+
 int success(const std::wstring_view& message) {
 	log(message, false, true);
 	return EXIT_SUCCESS;

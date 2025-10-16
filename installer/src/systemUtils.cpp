@@ -3,7 +3,6 @@
 
 Path getProgramFilesPath() {
 	wchar_t* path{ nullptr };
-
 	if (FAILED(SHGetKnownFolderPath(FOLDERID_ProgramFiles, 0, nullptr, &path))) 
 		return L"C:\\Program Files\\";
 
@@ -12,14 +11,11 @@ Path getProgramFilesPath() {
 }
 
 bool isAdmin() {
-	bool isElevated{ false };
 	HANDLE hToken{ nullptr };
+	if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken)) 
+		return log(L"OpenProcessTokenFailed", true);
 
-	if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken)) {
-		error(L"OpenProcessToken failed");
-		return false;
-	}
-
+	bool isElevated{ false };
 	TOKEN_ELEVATION elevation{};
 	DWORD returnSize = sizeof(TOKEN_ELEVATION);
 

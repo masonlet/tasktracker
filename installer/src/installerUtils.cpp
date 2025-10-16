@@ -8,9 +8,8 @@
 #include <fstream>
 
 bool isTaskTrackerInstalled() {
-	return keyExists(REGISTRY_PATH) || fileExists(FILE_PATH);
+	return registryKeyExists(REGISTRY_PATH) || fileExists(FILE_PATH);
 }
-
 bool extractTaskTrackerExe(const Path& toPath) {
 	HRSRC hResource = FindResource(NULL, MAKEINTRESOURCE(TASKTRACKER_EXE), RT_RCDATA);
 	if (!hResource) return error(L"Failed to find TaskTracker.exe resource");
@@ -35,7 +34,7 @@ bool extractTaskTrackerExe(const Path& toPath) {
 }
 
 int deleteTaskTracker() {
-	if (keyExists(REGISTRY_PATH) && !deleteTaskTrackerKeys())
+	if (registryKeyExists(REGISTRY_PATH) && !deleteTaskTrackerKeys())
 		return error(L"Failed to delete keys");
 
 	if (fileExists(EXE_PATH) && !deleteFile(EXE_PATH))
@@ -49,8 +48,14 @@ int deleteTaskTracker() {
 }
 
 int installTaskTracker() {
-	if (!createTaskTrackerKeys() || !createDirectory(FILE_PATH) || !extractTaskTrackerExe(EXE_PATH))
-		return error(L"Failed to install");
+	if (!createTaskTrackerKeys())
+		return error(L"Failed to create Task Tracker Keys");
+
+	if (!createDirectory(FILE_PATH))
+		return error(L"Failed to create Task Tracker Directory");
+
+	if (!extractTaskTrackerExe(EXE_PATH))
+		return error(L"Failed to extract Task Tracker EXE");
 
 	log(L"File and executable created successfully");
 	return success(L"Installation Completed");
