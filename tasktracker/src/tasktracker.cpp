@@ -42,15 +42,15 @@ int wmain(int argc, wchar_t* argv[]){
 	if (icon.wstring() == L"C:\\Windows\\System32\\shell32.dll,-4")
 		return exitAndRefresh(folder);
 
-	std::ofstream desktopIniFile(desktopIni);
+	std::wofstream desktopIniFile(desktopIni);
 	if (!desktopIniFile) return error(L"Failed to create desktopIni file at " + desktopIni.wstring());
 	
-	desktopIniFile << "[.ShellClassInfo]\n" 
-								 << "IconResource=" << icon.string() << '\n'
-								 << "[ViewState]\n"
-								 << "Mode=\n"
-								 << "Vid=\n"
-								 << "FolderType=Generic\n";
+	desktopIniFile << L"[.ShellClassInfo]\n" 
+								 << L"IconResource=" << icon.wstring() << L'\n'
+								 << L"[ViewState]\n"
+								 << L"Mode=\n"
+								 << L"Vid=\n"
+								 << L"FolderType=Generic\n";
 	desktopIniFile.close();
 
 	if (!SetFileAttributesW(folder.c_str(), FILE_ATTRIBUTE_SYSTEM))

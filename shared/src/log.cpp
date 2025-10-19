@@ -22,7 +22,7 @@ int success(const std::wstring_view& message) {
 	return EXIT_SUCCESS;
 }
 int error(const std::wstring_view& message) {
-  logError(message);
+  logError(message, true);
   return EXIT_FAILURE;
 }
 
