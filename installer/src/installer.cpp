@@ -3,9 +3,11 @@
 #include "log.hpp"
 
 int wmain() {
-	if (!isAdmin()) 
+	if (!TaskTracker::SystemUtils::isAdmin()) 
 		return MessageBoxW(NULL, L"Must be ran as administrator", L"Error", MB_OK | MB_ICONERROR), EXIT_FAILURE;
 
-	COMInitializer t{};
-	return isTaskTrackerInstalled() ? deleteTaskTracker() : installTaskTracker();
+	TaskTracker::SystemUtils::COMInitializer t{};
+	return TaskTracker::Installer::isTaskTrackerInstalled() 
+		? TaskTracker::Installer::deleteTaskTracker() 
+		: TaskTracker::Installer::installTaskTracker();
 }

@@ -4,18 +4,20 @@
 
 #include <shlobj_core.h>
 
-struct COMInitializer {
-	COMInitializer() {
-		if (FAILED(CoInitializeEx(NULL, COINIT_MULTITHREADED)))
-			throw std::runtime_error("COM initializer failed");
-	}
-	~COMInitializer() { CoUninitialize(); }
-};
+namespace TaskTracker::SystemUtils {
+	struct COMInitializer {
+		COMInitializer() {
+			if (FAILED(CoInitializeEx(NULL, COINIT_MULTITHREADED)))
+				throw std::runtime_error("COM initializer failed");
+		}
+		~COMInitializer() { CoUninitialize(); }
+	};
 
-constexpr std::wstring_view EXE_NAME = L"TaskTracker.exe";
+	constexpr std::wstring_view EXE_NAME = L"TaskTracker.exe";
 
-Path getProgramFilesPath();
-inline Path getFilePath() { return getProgramFilesPath() / "Task Tracker"; }
-inline Path getExePath() { return getFilePath() / EXE_NAME; }
+	Path getProgramFilesPath();
+	inline Path getFilePath() { return getProgramFilesPath() / "Task Tracker"; }
+	inline Path getExePath() { return getFilePath() / EXE_NAME; }
 
-bool isAdmin();
+	bool isAdmin();
+}

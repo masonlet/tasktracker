@@ -2,4 +2,6 @@
 
 #include <filesystem>
 
-using Path = std::filesystem::path;
+namespace TaskTracker {
+	using Path = std::filesystem::path;
+}

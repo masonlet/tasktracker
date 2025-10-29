@@ -2,9 +2,11 @@
 
 #include "filePath.h"
 
-bool isTaskTrackerInstalled();
+namespace TaskTracker::Installer {
+	bool isTaskTrackerInstalled();
 
-bool extractTaskTrackerExe(const Path& toPath);
-int installTaskTracker();
+	bool extractTaskTrackerExe(const Path& toPath);
+	int installTaskTracker();
 
-int deleteTaskTracker();
+	int deleteTaskTracker();
+}
