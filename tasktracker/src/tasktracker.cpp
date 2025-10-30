@@ -4,26 +4,35 @@
 #include "log.hpp"
 
 #include <fstream>
-#include <shlobj.h>
 
 int wmain(int argc, wchar_t* argv[]){
-	if (argc != 3) return TaskTracker::Log::exitError(L"Invalid argument amount\nUsage: TaskTracker.exe <folder_path> <icon_path>");
+	if (argc < 2) return TaskTracker::Log::exitError(L"Task Tracker", L"Missing arguments.\nUse --help for usage info.");
+
+	const std::wstring_view arg1{ argv[1] };
+	if (arg1 == L"--help" || arg1 == L"-h") 
+		return TaskTracker::Log::exitSuccess(L"Task Tracker",
+			L"Usage: TaskTracker.exe <folder_path> <icon_path>\n"
+			L"Example: TaskTracker.exe \"C:\\Projects\" \"C:\\Icons\\project.ico\""
+		);
+
+	if (argc != 3) 
+		return TaskTracker::Log::exitError(L"Task Tracker", L"Invalid argument amount\nUsage: TaskTracker.exe <folder_path> <icon_path>");
 
 	const TaskTracker::Path& folder{ argv[1] };
-	if (!TaskTracker::SystemUtils::isValidPath(folder)) 
-		return TaskTracker::Log::exitError(L"Failed to set folder icon");
+	if (!TaskTracker::SystemUtils::isValidPath(folder, L"Task Tracker"))
+		return TaskTracker::Log::exitError(L"Task Tracker", L"Failed to set folder icon");
 
 	const TaskTracker::Path desktopIni{ folder / "desktop.ini" };
-	if (!TaskTracker::SystemUtils::deleteDesktopIni(desktopIni))
-		return TaskTracker::Log::exitError(L"Failed to delete desktop.ini file");
+	if (!TaskTracker::SystemUtils::deleteDesktopIni(desktopIni, L"Task Tracker"))
+		return TaskTracker::Log::exitError(L"Task Tracker", L"Failed to delete desktop.ini file");
 
 	const TaskTracker::Path& icon{ argv[2] };
-	if (icon.wstring() == L"C:\\Windows\\System32\\shell32.dll,-4")
-		return TaskTracker::SystemUtils::exitAndRefresh(folder);
+	if (icon.wstring() == TaskTracker::SystemUtils::DEFAULT_ICON_PATH)
+		return TaskTracker::SystemUtils::exitAndRefresh(folder, L"Task Tracker");
 
 	std::wofstream desktopIniFile(desktopIni);
 	if (!desktopIniFile) 
-		return TaskTracker::Log::exitError(L"Failed to create desktopIni file at " + desktopIni.wstring());
+		return TaskTracker::Log::exitError(L"Task Tracker", L"Failed to create desktopIni file at " + desktopIni.wstring());
 	
 	desktopIniFile << L"[.ShellClassInfo]\n" 
 								 << L"IconResource=" << icon.wstring() << L'\n'
@@ -34,9 +43,10 @@ int wmain(int argc, wchar_t* argv[]){
 	desktopIniFile.close();
 
 	if (!SetFileAttributesW(folder.c_str(), FILE_ATTRIBUTE_SYSTEM))
-		return TaskTracker::Log::exitError(L"Failed to set folder attributes");
+		return TaskTracker::Log::exitError(L"Task Tracker", L"Failed to set folder attributes");
 	if (!SetFileAttributesW(desktopIni.c_str(), FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM))
-		return TaskTracker::Log::exitError(L"Failed to set desktop.ini attributes");
+		return TaskTracker::Log::exitError(L"Task Tracker", L"Failed to set desktop.ini attributes");
 
-	return TaskTracker::SystemUtils::exitAndRefresh(folder);
+	TaskTracker::Log::info(L"Task Tracker", L"Folder icon set successfully");
+	return TaskTracker::SystemUtils::exitAndRefresh(folder, L"Task Tracker");
 }

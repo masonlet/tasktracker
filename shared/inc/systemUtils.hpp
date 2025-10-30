@@ -14,6 +14,7 @@ namespace TaskTracker::SystemUtils {
 	};
 
 	constexpr std::wstring_view EXE_NAME = L"TaskTracker.exe";
+	constexpr std::wstring_view DEFAULT_ICON_PATH = L"C:\\Windows\\System32\\shell32.dll,-4";
 
 	Path getProgramFilesPath();
 	inline Path getFilePath() { return getProgramFilesPath() / "Task Tracker"; }
@@ -21,7 +22,7 @@ namespace TaskTracker::SystemUtils {
 
 	bool isAdmin();
 
-	int exitAndRefresh(const Path& path);
-	bool isValidPath(const Path& path);
-	bool deleteDesktopIni(const Path& path);
+	int exitAndRefresh(const Path& path, const std::wstring_view& caller);
+	bool isValidPath(const Path& path, const std::wstring_view& caller);
+	bool deleteDesktopIni(const Path& path, const std::wstring_view& caller);
 }

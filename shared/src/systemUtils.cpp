@@ -16,7 +16,7 @@ namespace TaskTracker::SystemUtils {
 	bool isAdmin() {
 		HANDLE hToken{ nullptr };
 		if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken))
-			return Log::error(L"OpenProcessTokenFailed");
+			return Log::error(L"Installer", L"OpenProcessTokenFailed");
 
 		TOKEN_ELEVATION elevation{};
 		DWORD returnSize = sizeof(TOKEN_ELEVATION);
@@ -45,27 +45,26 @@ namespace TaskTracker::SystemUtils {
 		}
 	}
 
-	int exitAndRefresh(const Path& path) {
-		Log::info(L"Refreshing Explorer cache and folder view for \"" + path.wstring() + L"\"");
+	int exitAndRefresh(const Path& path, const std::wstring_view& caller) {
 		refreshExplorer(path);
-		return EXIT_SUCCESS;
+		return Log::exitSuccess(caller, L"Refreshing Explorer cache and folder view for \"" + path.wstring() + L"\"");
 	}
 
-	bool isValidPath(const TaskTracker::Path& path) {
-		if (!TaskTracker::FileUtils::fileExists(path, true)
-			|| !TaskTracker::FileUtils::isDirectory(path, true)
-			) return TaskTracker::Log::error(L"Folder path \"" + path.wstring() + L"\" is invalid");
+	bool isValidPath(const TaskTracker::Path& path, const std::wstring_view& caller) {
+		if (!TaskTracker::FileUtils::fileExists(path, caller, true)
+		 || !TaskTracker::FileUtils::isDirectory(path, caller, true)
+		) return TaskTracker::Log::error(caller, L"Folder path \"" + path.wstring() + L"\" is invalid");
 
-		return TaskTracker::Log::info(L"Folder path \"" + path.wstring() + L"\" is valid");
+		return TaskTracker::Log::info(caller, L"Folder path \"" + path.wstring() + L"\" is valid");
 	}
 
-	bool deleteDesktopIni(const TaskTracker::Path& path) {
-		if (FileUtils::fileExists(path, true)) {
+	bool deleteDesktopIni(const TaskTracker::Path& path, const std::wstring_view& caller) {
+		if (FileUtils::fileExists(path, caller, true)) {
 			SetFileAttributesW(path.c_str(), FILE_ATTRIBUTE_NORMAL);
-			if (!FileUtils::deleteFile(path.c_str()))
-				return TaskTracker::Log::error(L"Failed to delete desktop.ini file");
+			if (!FileUtils::deleteFile(path.c_str(), caller))
+				return TaskTracker::Log::error(caller, L"Failed to delete desktop.ini file");
 		}
 
-		return TaskTracker::Log::info(L"Deleted desktop.ini file successfully");
+		return TaskTracker::Log::info(caller, L"Deleted desktop.ini file successfully");
 	}
 }
