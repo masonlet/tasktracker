@@ -50,21 +50,21 @@ namespace TaskTracker::SystemUtils {
 		return Log::exitSuccess(caller, L"Refreshing Explorer cache and folder view for \"" + path.wstring() + L"\"");
 	}
 
-	bool isValidPath(const TaskTracker::Path& path, const std::wstring_view& caller) {
-		if (!TaskTracker::FileUtils::fileExists(path, caller, true)
-		 || !TaskTracker::FileUtils::isDirectory(path, caller, true)
-		) return TaskTracker::Log::error(caller, L"Folder path \"" + path.wstring() + L"\" is invalid");
+	bool isValidPath(const Path& path, const std::wstring_view& caller) {
+		if (!FileUtils::fileExists(path, caller, true)
+		 || !FileUtils::isDirectory(path, caller, true)
+		) return Log::error(caller, L"Folder path \"" + path.wstring() + L"\" is invalid");
 
-		return TaskTracker::Log::info(caller, L"Folder path \"" + path.wstring() + L"\" is valid");
+		return Log::info(caller, L"Folder path \"" + path.wstring() + L"\" is valid");
 	}
 
-	bool deleteDesktopIni(const TaskTracker::Path& path, const std::wstring_view& caller) {
+	bool deleteDesktopIni(const Path& path, const std::wstring_view& caller) {
 		if (FileUtils::fileExists(path, caller, true)) {
 			SetFileAttributesW(path.c_str(), FILE_ATTRIBUTE_NORMAL);
 			if (!FileUtils::deleteFile(path.c_str(), caller))
-				return TaskTracker::Log::error(caller, L"Failed to delete desktop.ini file");
+				return Log::error(caller, L"Failed to delete desktop.ini file");
 		}
 
-		return TaskTracker::Log::info(caller, L"Deleted desktop.ini file successfully");
+		return Log::info(caller, L"Deleted desktop.ini file successfully");
 	}
 }
